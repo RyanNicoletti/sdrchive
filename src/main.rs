@@ -1,8 +1,10 @@
+mod dsp;
 use anyhow::Result;
+use dsp::FmDemodulator;
 use num_complex::Complex;
 use std::fs::File;
 use std::io::Read;
-
+use std::println;
 trait SdrSource {
     fn set_frequency(&mut self, freq: u64) -> Result<()>;
     fn set_sample_rate(&mut self, fs: u64) -> Result<()>;
@@ -47,7 +49,16 @@ impl SdrSource for FileSdr {
 fn main() -> Result<()> {
     let mut buf = vec![Complex::new(0.0, 0.0); 512];
     let mut sdr = FileSdr::new("src/test_1khz_fm.iq", buf.len())?;
-    let n = sdr.read_samples(&mut buf)?;
-    println!("read {n} samples; first = {:?}", buf[0]);
+    let mut fm_demod = FmDemodulator::new();
+    let mut audio_buf: Vec<f32> = Vec::new();
+    loop {
+        let n = sdr.read_samples(&mut buf)?;
+        if n == 0 {
+            println!("brodie");
+            break;
+        }
+        fm_demod.demodulate(&buf[..n], &mut audio_buf);
+        println!("{} {} {}", audio_buf[1], audio_buf[121], audio_buf[241]);
+    }
     Ok(())
 }
