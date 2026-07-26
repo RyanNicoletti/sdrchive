@@ -1,2 +1,2 @@
 /target
-src/test_1khz_fm.iq
+test_data/*.sigmf-data

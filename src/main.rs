@@ -1,64 +1,27 @@
 mod dsp;
+mod sdr;
 use anyhow::Result;
 use dsp::FmDemodulator;
 use num_complex::Complex;
-use std::fs::File;
-use std::io::Read;
+use sdr::{FileSdr, SdrSource};
 use std::println;
-trait SdrSource {
-    fn set_frequency(&mut self, freq: u64) -> Result<()>;
-    fn set_sample_rate(&mut self, fs: u64) -> Result<()>;
-    fn read_samples(&mut self, buf: &mut [Complex<f32>]) -> Result<usize>;
-}
 
-struct FileSdr {
-    f: File,
-    file_data: Vec<u8>,
-}
-
-impl FileSdr {
-    fn new(path: &str, buflen: usize) -> Result<Self> {
-        let f = File::open(path)?;
-        let buf = vec![0u8; buflen * 2];
-        Ok(FileSdr { f, file_data: buf })
-    }
-}
-
-impl SdrSource for FileSdr {
-    fn set_frequency(&mut self, freq: u64) -> Result<()> {
-        todo!()
-    }
-
-    fn set_sample_rate(&mut self, fs: u64) -> Result<()> {
-        todo!()
-    }
-
-    fn read_samples(&mut self, buf: &mut [Complex<f32>]) -> Result<usize> {
-        let n = self.f.read(&mut self.file_data)?;
-        let mut count = 0;
-        for (slot, iq) in buf.iter_mut().zip(self.file_data[..n].chunks_exact(2)) {
-            let i = (iq[0] as f32 - 127.5) / 127.5;
-            let q = (iq[1] as f32 - 127.5) / 127.5;
-            *slot = Complex::new(i, q);
-            count += 1;
-        }
-        Ok(count)
-    }
-}
+const SIGMF_META: &str = "data/test_1khz_fm.sigmf-meta";
 
 fn main() -> Result<()> {
     let mut buf = vec![Complex::new(0.0, 0.0); 512];
-    let mut sdr = FileSdr::new("src/test_1khz_fm.iq", buf.len())?;
+    let mut sdr = FileSdr::new(SIGMF_META, buf.len())?;
     let mut fm_demod = FmDemodulator::new();
     let mut audio_buf: Vec<f32> = Vec::new();
     loop {
         let n = sdr.read_samples(&mut buf)?;
+        println!("{}", n);
         if n == 0 {
             println!("brodie");
             break;
         }
         fm_demod.demodulate(&buf[..n], &mut audio_buf);
-        println!("{} {} {}", audio_buf[1], audio_buf[121], audio_buf[241]);
+        // println!("{} {} {}", audio_buf[1], audio_buf[121], audio_buf[241]);
     }
     Ok(())
 }
