@@ -1,14 +1,24 @@
+mod config;
 mod dsp;
 mod sdr;
 use anyhow::Result;
 use dsp::FmDemodulator;
 use num_complex::Complex;
 use sdr::{FileSdr, SdrSource};
-use std::println;
+use std::path::Path;
+
+use crate::config::load_config;
 
 const SIGMF_META: &str = "data/test_1khz_fm.sigmf-meta";
 
 fn main() -> Result<()> {
+    let config_str = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "sdrchive_config.json".to_string());
+    let config_path: &Path = Path::new(&config_str);
+    let config_parsed = load_config(config_path)?;
+    println!("{:?}", config_parsed);
+
     let mut buf = vec![Complex::new(0.0, 0.0); 512];
     let mut sdr = FileSdr::new(SIGMF_META, buf.len())?;
     let mut fm_demod = FmDemodulator::new();
@@ -21,7 +31,6 @@ fn main() -> Result<()> {
             break;
         }
         fm_demod.demodulate(&buf[..n], &mut audio_buf);
-        // println!("{} {} {}", audio_buf[1], audio_buf[121], audio_buf[241]);
     }
     Ok(())
 }

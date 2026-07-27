@@ -1,0 +1,12 @@
+{
+  "output_dir": "./recordings",
+  "jobs": [
+    {
+      "name": "noaa_wx",
+      "frequency_hz": 162550000,
+      "schedule": { "type": "daily", "start": "06:00", "duration_minutes": 60 },
+      "demod_type": "nfm",
+      "retention_days": 30
+    }
+  ]
+}
