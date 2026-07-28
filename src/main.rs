@@ -7,8 +7,6 @@ use num_complex::Complex;
 use sdr::{FileSdr, SdrSource};
 use std::path::Path;
 
-use crate::config::load_config;
-
 const SIGMF_META: &str = "data/test_1khz_fm.sigmf-meta";
 
 fn main() -> Result<()> {
@@ -16,7 +14,7 @@ fn main() -> Result<()> {
         .nth(1)
         .unwrap_or_else(|| "sdrchive_config.json".to_string());
     let config_path: &Path = Path::new(&config_str);
-    let config_parsed = load_config(config_path)?;
+    let config_parsed = config::Config::load(config_path)?;
     println!("{:?}", config_parsed);
 
     let mut buf = vec![Complex::new(0.0, 0.0); 512];
