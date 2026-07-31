@@ -100,3 +100,26 @@ pub fn next_occurrence(schedule: &Schedule, now: &Zoned) -> anyhow::Result<Zoned
         }
     }
 }
+
+#[cfg(test)]
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_daily_today() {
+        todo!()
+    }
+    fn test_daily_tmrw() {
+        todo!()
+    }
+    fn test_every_today() {
+        todo!()
+    }
+    fn test_every_tmrw() {
+        todo!()
+    }
+    fn test_daily_dst() {
+        todo!()
+    }
+}
