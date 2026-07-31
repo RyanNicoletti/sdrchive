@@ -4,7 +4,11 @@
     {
       "name": "noaa_wx",
       "frequency_hz": 162550000,
-      "schedule": { "type": "daily", "start": "06:00", "duration_minutes": 60 },
+      "schedule": {
+        "type": "every",
+        "interval_minutes": 2,
+        "duration_minutes": 1
+      },
       "demod_type": "nfm",
       "retention_days": 30
     }
