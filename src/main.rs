@@ -1,5 +1,6 @@
 mod config;
 mod dsp;
+mod scheduler;
 mod sdr;
 use anyhow::Result;
 use dsp::FmDemodulator;
