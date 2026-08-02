@@ -102,24 +102,79 @@ pub fn next_occurrence(schedule: &Schedule, now: &Zoned) -> anyhow::Result<Zoned
 }
 
 #[cfg(test)]
-
 mod tests {
+    use crate::config::StartTime;
+
     use super::*;
 
     #[test]
     fn test_daily_today() {
-        todo!()
+        let test_sched = Schedule::Daily {
+            start: StartTime {
+                minute: 00,
+                hour: 06,
+            },
+            duration_minutes: 60,
+        };
+        let now: Zoned = "2026-07-30T05:00:00[America/Chicago]".parse().unwrap();
+        let next = next_occurrence(&test_sched, &now).unwrap();
+        let expected_next: Zoned = "2026-07-30T06:00:00[America/Chicago]".parse().unwrap();
+        assert_eq!(next, expected_next);
     }
+
+    #[test]
     fn test_daily_tmrw() {
-        todo!()
+        let test_sched = Schedule::Daily {
+            start: StartTime {
+                minute: 00,
+                hour: 06,
+            },
+            duration_minutes: 60,
+        };
+        let now: Zoned = "2026-07-30T14:20:00[America/Chicago]".parse().unwrap();
+        let next = next_occurrence(&test_sched, &now).unwrap();
+        let expected_next: Zoned = "2026-07-31T06:00:00[America/Chicago]".parse().unwrap();
+        assert_eq!(next, expected_next);
     }
+
+    #[test]
     fn test_every_today() {
-        todo!()
+        let test_sched = Schedule::Every {
+            interval_minutes: 240,
+            duration_minutes: 60,
+        };
+        let now: Zoned = "2026-07-30T10:37:00[America/Chicago]".parse().unwrap();
+        let next = next_occurrence(&test_sched, &now).unwrap();
+        let expected_next: Zoned = "2026-07-30T12:00:00[America/Chicago]".parse().unwrap();
+        assert_eq!(next, expected_next);
     }
+
+    #[test]
     fn test_every_tmrw() {
-        todo!()
+        let test_sched = Schedule::Every {
+            interval_minutes: 240,
+            duration_minutes: 60,
+        };
+        let now: Zoned = "2026-07-30T22:15:00[America/Chicago]".parse().unwrap();
+        let next = next_occurrence(&test_sched, &now).unwrap();
+        let expected_next: Zoned = "2026-07-31T00:00:00[America/Chicago]".parse().unwrap();
+        assert_eq!(next, expected_next);
     }
+
+    #[test]
     fn test_daily_dst() {
-        todo!()
+        let test_sched = Schedule::Daily {
+            start: StartTime {
+                minute: 30,
+                hour: 02,
+            },
+            duration_minutes: 60,
+        };
+        let now: Zoned = "2026-03-08T01:00:00[America/Chicago]".parse().unwrap();
+        let next = next_occurrence(&test_sched, &now).unwrap();
+        // 02:30 doesn't exist on this night due to daylight savings (clocks jump 02:00 -> 03:00)
+        // jiff accounts for this automatically
+        let expected_next: Zoned = "2026-03-08T03:30:00[America/Chicago]".parse().unwrap();
+        assert_eq!(next, expected_next);
     }
 }
