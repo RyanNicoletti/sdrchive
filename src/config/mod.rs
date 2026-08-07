@@ -1,7 +1,10 @@
+mod issues;
+
+pub use issues::Issues;
+
 use anyhow::{Context, ensure};
 use serde::Deserialize;
 use std::collections::HashSet;
-use std::convert::identity;
 use std::path::{Path, PathBuf};
 
 fn default_output_dir() -> PathBuf {
@@ -10,48 +13,6 @@ fn default_output_dir() -> PathBuf {
 fn default_retention() -> u32 {
     30
 }
-
-#[derive(Debug)]
-pub struct Issue {
-    pub at: String,
-    pub problem: String,
-}
-
-#[derive(Debug, Default)]
-pub struct Issues {
-    items: Vec<Issue>,
-}
-
-impl Issues {
-    pub fn check(&mut self, ok: bool, at: impl Into<String>, problem: impl Into<String>) {
-        if !ok {
-            self.items.push(Issue {
-                at: at.into(),
-                problem: problem.into(),
-            });
-        }
-    }
-
-    pub fn into_result(self) -> Result<(), Issues> {
-        if self.items.is_empty() {
-            Ok(())
-        } else {
-            Err(self)
-        }
-    }
-}
-
-impl std::fmt::Display for Issues {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} problem(s) in config:", self.items.len())?;
-        for issue in &self.items {
-            write!(f, "\n  {}: {}", issue.at, issue.problem)?;
-        }
-        Ok(())
-    }
-}
-
-impl std::error::Error for Issues {}
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -99,6 +60,20 @@ impl Config {
                 format!("jobs[{i}].retention_days"),
                 "must be greater than 0",
             );
+            if let SampleRate::Hz(hz) = job.sample_rate {
+                issues.check(
+                    hz > 0,
+                    format!("jobs[{i}].sample_rate"),
+                    "must be greater than 0",
+                )
+            }
+            if let GainSetting::Db(db) = job.gain {
+                issues.check(
+                    db.is_finite(),
+                    format!("jobs[{i}].gain"),
+                    "must be a finite number",
+                )
+            }
 
             match &job.schedule {
                 Schedule::Daily {
@@ -150,6 +125,10 @@ pub struct Job {
     pub demod_type: DemodType,
     #[serde(default = "default_retention")]
     pub retention_days: u32,
+    #[serde(default)]
+    pub gain: GainSetting,
+    #[serde(default)]
+    pub sample_rate: SampleRate,
 }
 
 #[derive(Deserialize, Debug)]
@@ -158,6 +137,60 @@ pub enum DemodType {
     Nfm,
     Wfm,
     Am,
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum RawGain {
+    Keyword(String),
+    Db(f32),
+}
+
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Default)]
+#[serde(try_from = "RawGain")]
+pub enum GainSetting {
+    #[default]
+    Auto,
+    Db(f32),
+}
+
+impl TryFrom<RawGain> for GainSetting {
+    type Error = anyhow::Error;
+    fn try_from(raw: RawGain) -> Result<Self, Self::Error> {
+        match raw {
+            RawGain::Keyword(s) if s.eq_ignore_ascii_case("auto") => Ok(GainSetting::Auto),
+            RawGain::Keyword(s) => anyhow::bail!("invalid gain {s:?}: expected \"auto\" or dB"),
+            RawGain::Db(db) => Ok(GainSetting::Db(db)),
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum RawFs {
+    Keyword(String),
+    Hz(u32),
+}
+
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Default)]
+#[serde(try_from = "RawFs")]
+pub enum SampleRate {
+    #[default]
+    Auto,
+    Hz(u32),
+}
+
+impl TryFrom<RawFs> for SampleRate {
+    type Error = anyhow::Error;
+    fn try_from(raw: RawFs) -> Result<Self, Self::Error> {
+        match raw {
+            RawFs::Keyword(s) if s.eq_ignore_ascii_case("auto") => Ok(SampleRate::Auto),
+            RawFs::Keyword(s) => {
+                anyhow::bail!("invalid sample_rate {s:?}: expected \"auto\" or Hz")
+            }
+            RawFs::Hz(hz) => Ok(SampleRate::Hz(hz)),
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -177,9 +210,10 @@ pub enum Schedule {
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(try_from = "String")]
 pub struct StartTime {
-    pub minute: u8,
     pub hour: u8,
+    pub minute: u8,
 }
+
 impl TryFrom<String> for StartTime {
     type Error = anyhow::Error;
     fn try_from(start_str: String) -> Result<Self, Self::Error> {
@@ -247,6 +281,8 @@ mod tests {
         let config = Config::from_json(config_str).unwrap();
         assert_eq!(config.jobs[0].retention_days, 30);
         assert_eq!(config.output_dir, Path::new("./recordings"));
+        assert_eq!(config.jobs[0].gain, GainSetting::Auto);
+        assert_eq!(config.jobs[0].sample_rate, SampleRate::Auto);
     }
 
     #[test]
