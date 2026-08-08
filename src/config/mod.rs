@@ -19,6 +19,8 @@ fn default_retention() -> u32 {
 pub struct Config {
     #[serde(default = "default_output_dir")]
     pub output_dir: PathBuf,
+    #[serde(default)]
+    pub location: Option<Location>,
     pub jobs: Vec<Job>,
 }
 
@@ -42,6 +44,19 @@ impl Config {
             "jobs",
             "config must contain at least one job",
         );
+        if let Some(l) = self.location.as_ref() {
+            issues.check(
+                (-90.0..=90.0).contains(&l.latitude),
+                "location",
+                "Latitude is out of range",
+            );
+            issues.check(
+                (-180.0..=180.0).contains(&l.longitude),
+                "location",
+                "Longitude is out of range",
+            );
+        }
+
         let mut seen = HashSet::new();
         for (i, job) in self.jobs.iter().enumerate() {
             issues.check(
@@ -114,6 +129,13 @@ impl Config {
         }
         issues.into_result()
     }
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct Location {
+    pub latitude: f64,
+    pub longitude: f64,
 }
 
 #[derive(Deserialize, Debug)]
