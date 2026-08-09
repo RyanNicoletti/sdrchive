@@ -7,6 +7,7 @@ pub struct ScheduledJob {
     pub job: Job,
     pub next_run: Zoned,
 }
+
 pub struct Scheduler {
     heap: BinaryHeap<ScheduledJob>,
 }

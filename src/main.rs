@@ -1,10 +1,11 @@
 mod config;
+mod resolve;
 mod scheduler;
 mod sdr;
 use anyhow::Result;
 use std::path::Path;
 
-use crate::scheduler::Scheduler;
+use crate::{scheduler::Scheduler, sdr::detect};
 
 fn main() -> Result<()> {
     let config_str = std::env::args()
@@ -12,8 +13,8 @@ fn main() -> Result<()> {
         .unwrap_or_else(|| "sdrchive_config.json".to_string());
     let config_path: &Path = Path::new(&config_str);
     let cfg = config::Config::load(config_path)?;
-    // let sdr = detect_source();
-    let mut scheduler = Scheduler::new(cfg)?;
-    scheduler.run()?;
+    let sdr = detect()?;
+    // let mut scheduler = Scheduler::new(cfg)?;
+    // scheduler.run()?;
     Ok(())
 }

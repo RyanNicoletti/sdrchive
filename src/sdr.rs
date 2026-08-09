@@ -18,6 +18,9 @@ impl Capabilities {
     pub fn supports_freq(&self, freq: u64) -> bool {
         self.frequency_range_hz.contains(&freq)
     }
+    pub fn supports_gain(&self, gain: f32) -> bool {
+        self.gain_steps_db.iter().any(|&g| g == gain)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -38,20 +41,21 @@ pub struct HardwareConfig {
     pub gain: Gain,
 }
 
-pub trait IqSource {
+pub trait SdrDevice {
     fn capabilities(&self) -> &Capabilities;
     fn read_iq(&mut self) -> anyhow::Result<&[Complex<f32>]>;
     fn configure(&mut self, cfg: &HardwareConfig) -> anyhow::Result<()>;
+    fn name(&self) -> &'static str;
 }
 
-pub struct RtlSdrSource {
+pub struct RtlSdrDev {
     device: RtlSdr,
     capabilities: Capabilities,
     raw: Vec<u8>,
     iq: Vec<Complex<f32>>,
 }
 
-impl RtlSdrSource {
+impl RtlSdrDev {
     pub fn new() -> anyhow::Result<Self> {
         let device = RtlSdr::open_first_available()?;
         let capabilities = Capabilities {
@@ -74,7 +78,7 @@ impl RtlSdrSource {
     }
 }
 
-impl IqSource for RtlSdrSource {
+impl SdrDevice for RtlSdrDev {
     fn capabilities(&self) -> &Capabilities {
         &self.capabilities
     }
@@ -109,4 +113,20 @@ impl IqSource for RtlSdrSource {
         self.device.reset_buffer()?;
         Ok(())
     }
+
+    fn name(&self) -> &'static str {
+        "RTL-SDR"
+    }
+}
+
+pub fn detect() -> anyhow::Result<Box<dyn SdrDevice>> {
+    let mut tried: Vec<String> = Vec::new();
+    match RtlSdrDev::new() {
+        Ok(rtl) => {
+            println!("Using device: {}", rtl.name());
+            return Ok(Box::new(rtl));
+        }
+        Err(e) => tried.push(format!("RTLSDR: ({e})")),
+    };
+    anyhow::bail!("No SDR device found, tried: {}", tried.join(", "))
 }

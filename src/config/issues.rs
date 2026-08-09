@@ -6,7 +6,7 @@ pub struct Issue {
 
 #[derive(Debug, Default)]
 pub struct Issues {
-    items: Vec<Issue>,
+    pub items: Vec<Issue>,
 }
 
 impl Issues {

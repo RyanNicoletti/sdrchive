@@ -1,4 +1,4 @@
-mod issues;
+pub(crate) mod issues;
 
 pub use issues::Issues;
 
@@ -75,13 +75,12 @@ impl Config {
                 format!("jobs[{i}].retention_days"),
                 "must be greater than 0",
             );
-            if let SampleRate::Hz(hz) = job.sample_rate {
-                issues.check(
-                    hz > 0,
-                    format!("jobs[{i}].sample_rate"),
-                    "must be greater than 0",
-                )
-            }
+            issues.check(
+                job.sample_rate_hz > 0,
+                format!("jobs[{i}].sample_rate"),
+                "must be greater than 0",
+            );
+
             if let GainSetting::Db(db) = job.gain {
                 issues.check(
                     db.is_finite(),
@@ -131,7 +130,7 @@ impl Config {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, Copy)]
 #[serde(deny_unknown_fields)]
 pub struct Location {
     pub latitude: f64,
@@ -150,10 +149,10 @@ pub struct Job {
     #[serde(default)]
     pub gain: GainSetting,
     #[serde(default)]
-    pub sample_rate: SampleRate,
+    pub sample_rate_hz: u32,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "lowercase")]
 pub enum DemodType {
     Nfm,
@@ -187,35 +186,7 @@ impl TryFrom<RawGain> for GainSetting {
     }
 }
 
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum RawFs {
-    Keyword(String),
-    Hz(u32),
-}
-
-#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Default)]
-#[serde(try_from = "RawFs")]
-pub enum SampleRate {
-    #[default]
-    Auto,
-    Hz(u32),
-}
-
-impl TryFrom<RawFs> for SampleRate {
-    type Error = anyhow::Error;
-    fn try_from(raw: RawFs) -> Result<Self, Self::Error> {
-        match raw {
-            RawFs::Keyword(s) if s.eq_ignore_ascii_case("auto") => Ok(SampleRate::Auto),
-            RawFs::Keyword(s) => {
-                anyhow::bail!("invalid sample_rate {s:?}: expected \"auto\" or Hz")
-            }
-            RawFs::Hz(hz) => Ok(SampleRate::Hz(hz)),
-        }
-    }
-}
-
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(tag = "type", rename_all = "lowercase")]
 #[serde(deny_unknown_fields)]
 pub enum Schedule {
@@ -304,7 +275,6 @@ mod tests {
         assert_eq!(config.jobs[0].retention_days, 30);
         assert_eq!(config.output_dir, Path::new("./recordings"));
         assert_eq!(config.jobs[0].gain, GainSetting::Auto);
-        assert_eq!(config.jobs[0].sample_rate, SampleRate::Auto);
     }
 
     #[test]
