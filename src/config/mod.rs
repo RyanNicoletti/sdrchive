@@ -148,7 +148,6 @@ pub struct Job {
     pub retention_days: u32,
     #[serde(default)]
     pub gain: GainSetting,
-    #[serde(default)]
     pub sample_rate_hz: u32,
 }
 

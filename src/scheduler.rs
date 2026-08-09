@@ -1,31 +1,41 @@
-use crate::config::{Config, Job, Schedule};
+use crate::{
+    config::{Location, Schedule},
+    resolve::{ResolvedConfig, ResolvedJob},
+    sdr::SdrDevice,
+};
 use jiff::{ToSpan, Zoned, civil::time};
-use std::{cmp::Ordering, collections::BinaryHeap, time::Duration};
+use std::{cmp::Ordering, collections::BinaryHeap, path::PathBuf, time::Duration};
 
 #[derive(Debug)]
 pub struct ScheduledJob {
-    pub job: Job,
+    pub job: ResolvedJob,
     pub next_run: Zoned,
 }
 
 pub struct Scheduler {
     heap: BinaryHeap<ScheduledJob>,
+    output_dir: PathBuf,
+    location: Option<Location>,
 }
 
 impl Scheduler {
-    pub fn new(config: Config) -> anyhow::Result<Self> {
+    pub fn new(config: ResolvedConfig) -> anyhow::Result<Self> {
         let mut job_heap = BinaryHeap::new();
         let now = Zoned::now();
-        for job in config.jobs {
+        for job in config.resolved_jobs {
             let next = next_occurrence(&job.schedule, &now)?;
             job_heap.push(ScheduledJob {
                 job,
                 next_run: next,
             });
         }
-        Ok(Self { heap: job_heap })
+        Ok(Self {
+            heap: job_heap,
+            output_dir: config.output_dir,
+            location: config.location,
+        })
     }
-    pub fn run(&mut self) -> anyhow::Result<()> {
+    pub fn run(&mut self, sdr: &mut dyn SdrDevice) -> anyhow::Result<()> {
         loop {
             let now = Zoned::now();
             let Some(due_at) = self.heap.peek().map(|e| e.next_run.clone()) else {
@@ -41,7 +51,8 @@ impl Scheduler {
                 break;
             };
             next_job.next_run = next_occurrence(&next_job.job.schedule, &now)?;
-            println!("{:?}", next_job);
+            // TODO: implement some sort of job runner to execute jobs (new module vs in scheduler?)
+            //execute_job(sdr, &next_job);
             self.heap.push(next_job);
         }
         Ok(())

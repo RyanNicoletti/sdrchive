@@ -9,13 +9,17 @@ use crate::{
     },
 };
 
-struct ResolvedConfig {
+#[derive(Debug)]
+
+pub struct ResolvedConfig {
     pub output_dir: PathBuf,
     pub location: Option<Location>,
     pub resolved_jobs: Vec<ResolvedJob>,
 }
 
-struct ResolvedJob {
+#[derive(Debug)]
+
+pub struct ResolvedJob {
     pub name: String,
     pub schedule: Schedule,
     pub demod_type: DemodType,
@@ -23,20 +27,35 @@ struct ResolvedJob {
     pub hw_config: HardwareConfig,
 }
 
-fn resolve(cfg: &Config, caps: &Capabilities) -> Result<ResolvedConfig, Issues> {
+pub fn resolve(cfg: &Config, caps: &Capabilities) -> Result<ResolvedConfig, Issues> {
     let mut resolved_jobs: Vec<ResolvedJob> = Vec::new();
     let mut issues: Issues = Issues::default();
-    for j in &cfg.jobs {
+    let supported_rates = caps
+        .sample_rates_hz
+        .iter()
+        .map(|r| format!("{}-{}", r.start(), r.end()))
+        .collect::<Vec<_>>()
+        .join(", ");
+    for (i, j) in cfg.jobs.iter().enumerate() {
         let beforelen = issues.items.len();
         issues.check(
             caps.supports_freq(j.frequency_hz),
-            format!("{}", j.frequency_hz),
-            "frequency is not supported",
+            format!("jobs[{i}].frequency_hz"),
+            format!(
+                "{} is outside the device range {}-{}",
+                j.frequency_hz,
+                caps.frequency_range_hz.start(),
+                caps.frequency_range_hz.end()
+            ),
         );
+
         issues.check(
             caps.supports_fs(j.sample_rate_hz),
-            format!("{}", j.sample_rate_hz),
-            "sample rate is not supported",
+            format!("jobs[{i}].sample_rate_hz"),
+            format!(
+                "{} is not supported; device supports {supported_rates}",
+                j.sample_rate_hz
+            ),
         );
         let gain = match j.gain {
             GainSetting::Auto => Auto,
@@ -68,11 +87,11 @@ fn resolve(cfg: &Config, caps: &Capabilities) -> Result<ResolvedConfig, Issues> 
     }
 }
 
-fn get_nearest_gain(db: &f32, gains: &Vec<f32>) -> f32 {
+fn get_nearest_gain(db: &f32, gains: &[f32]) -> f32 {
     let mut closest = gains[0];
     for gain in &gains[1..] {
         if (db - *gain).abs() < (db - closest).abs() {
-            closest = (db - *gain).abs();
+            closest = *gain;
         }
     }
     closest

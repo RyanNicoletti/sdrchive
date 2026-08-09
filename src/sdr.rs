@@ -35,6 +35,8 @@ impl Default for Gain {
     }
 }
 
+#[derive(Debug)]
+
 pub struct HardwareConfig {
     pub center_freq_hz: u64,
     pub sample_rate_hz: u32,
