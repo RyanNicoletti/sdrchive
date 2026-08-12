@@ -1,6 +1,7 @@
 use crate::{
     config::{Location, Schedule},
     resolve::{ResolvedConfig, ResolvedJob},
+    runner,
     sdr::SdrDevice,
 };
 use jiff::{ToSpan, Zoned, civil::time};
@@ -51,8 +52,8 @@ impl Scheduler {
                 break;
             };
             next_job.next_run = next_occurrence(&next_job.job.schedule, &now)?;
-            // TODO: implement some sort of job runner to execute jobs (new module vs in scheduler?)
-            //execute_job(sdr, &next_job);
+            let dur_seconds = next_job.job.schedule.duration_minutes() * 60;
+            runner::run_job(&next_job.job, dur_seconds, sdr, &self.output_dir)?;
             self.heap.push(next_job);
         }
         Ok(())

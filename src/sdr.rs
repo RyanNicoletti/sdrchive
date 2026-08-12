@@ -54,7 +54,7 @@ pub struct RtlSdrDev {
     device: RtlSdr,
     capabilities: Capabilities,
     raw: Vec<u8>,
-    iq: Vec<Complex<f32>>,
+    pub iq: Vec<Complex<f32>>,
 }
 
 impl RtlSdrDev {

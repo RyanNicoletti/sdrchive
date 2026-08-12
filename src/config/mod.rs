@@ -198,6 +198,18 @@ pub enum Schedule {
         duration_minutes: u32,
     },
 }
+impl Schedule {
+    pub fn duration_minutes(&self) -> u32 {
+        match self {
+            Self::Daily {
+                duration_minutes, ..
+            } => *duration_minutes,
+            Self::Every {
+                duration_minutes, ..
+            } => *duration_minutes,
+        }
+    }
+}
 
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(try_from = "String")]
