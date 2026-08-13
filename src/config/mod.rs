@@ -257,6 +257,7 @@ mod tests {
             {
             "name": "noaa_wx",
             "frequency_hz": 162550000,
+            "sample_rate_hz": 2400000,
             "schedule": { "type": "daily", "start": "06:00", "duration_minutes": 60 },
             "demod_type": "nfm",
             "retention_days": 30
@@ -276,6 +277,7 @@ mod tests {
             {
             "name": "noaa_wx",
             "frequency_hz": 162550000,
+            "sample_rate_hz": 2400000,
             "schedule": { "type": "daily", "start": "06:00", "duration_minutes": 60 },
             "demod_type": "nfm"
             }
@@ -295,6 +297,7 @@ mod tests {
             {
             "name": "noaa_wx",
             "frequency_typo": 162550000,
+            "sample_rate_hz": 2400000,
             "schedule": { "type": "daily", "start": "06:00", "duration_minutes": 60 },
             "demod_type": "nfm"
             }
@@ -312,6 +315,7 @@ mod tests {
             {
             "name": "noaa_wx",
             "frequency_hz": 162550000,
+            "sample_rate_hz": 2400000,
             "schedule": { "type": "daily", "start": "26:00", "duration_minutes": 60 },
             "demod_type": "nfm",
             "retention_days": 30
@@ -326,10 +330,10 @@ mod tests {
     fn test_duplicate_job_names() {
         let config_str = r#"{
     "jobs": [
-        { "name": "noaa_wx", "frequency_hz": 162550000,
+        { "name": "noaa_wx", "frequency_hz": 162550000, "sample_rate_hz": 2400000,
           "schedule": { "type": "daily", "start": "06:00", "duration_minutes": 60 },
           "demod_type": "nfm" },
-        { "name": "noaa_wx", "frequency_hz": 162400000,
+        { "name": "noaa_wx", "frequency_hz": 162400000, "sample_rate_hz": 2400000,
           "schedule": { "type": "daily", "start": "07:00", "duration_minutes": 60 },
           "demod_type": "nfm" }
     ]
@@ -345,6 +349,7 @@ mod tests {
             {
             "name": "noaa_wx",
             "frequency_hz": 162550000,
+            "sample_rate_hz": 2400000,
             "schedule": { "type": "daily", "start": "06:00", "duration_minutes": 60 },
             "demod_type": "nfm",
             "retention_days": 0
@@ -363,6 +368,7 @@ mod tests {
             {
             "name": "noaa_wx",
             "frequency_hz": 162550000,
+            "sample_rate_hz": 2400000,
             "schedule": { "type": "daily", "start": "06:00", "duration_minutes": 0 },
             "demod_type": "nfm"
             }
@@ -380,6 +386,7 @@ mod tests {
             {
             "name": "noaa_wx",
             "frequency_hz": 162550000,
+            "sample_rate_hz": 2400000,
             "schedule": { "type": "daily", "start": "06:00", "duration_minutes": 1440 },
             "demod_type": "nfm"
             }
@@ -397,6 +404,7 @@ mod tests {
             {
             "name": "airband",
             "frequency_hz": 121500000,
+            "sample_rate_hz": 2400000,
             "schedule": { "type": "every", "interval_minutes": 0, "duration_minutes": 30 },
             "demod_type": "am"
             }
@@ -414,6 +422,7 @@ mod tests {
             {
             "name": "airband",
             "frequency_hz": 121500000,
+            "sample_rate_hz": 2400000,
             "schedule": { "type": "every", "interval_minutes": 240, "duration_minutes": 0 },
             "demod_type": "am"
             }
@@ -431,6 +440,7 @@ mod tests {
             {
             "name": "airband",
             "frequency_hz": 121500000,
+            "sample_rate_hz": 2400000,
             "schedule": { "type": "every", "interval_minutes": 60, "duration_minutes": 60 },
             "demod_type": "am"
             }
@@ -488,7 +498,7 @@ mod tests {
     fn test_unknown_field_inside_schedule() {
         let config_str = r#"{
     "jobs": [
-        { "name": "noaa_wx", "frequency_hz": 162550000,
+        { "name": "noaa_wx", "frequency_hz": 162550000, "sample_rate_hz": 2400000,
           "schedule": { "type": "daily", "start": "06:00", "duration_minutes": 60, "bruh": 3 },
           "demod_type": "nfm" }
     ]

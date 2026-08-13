@@ -15,7 +15,7 @@ pub struct ScheduledJob {
 
 pub struct Scheduler {
     heap: BinaryHeap<ScheduledJob>,
-    output_dir: PathBuf,
+    pub output_dir: PathBuf,
     location: Option<Location>,
 }
 
