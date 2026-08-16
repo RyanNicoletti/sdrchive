@@ -3,6 +3,8 @@ mod resolve;
 mod runner;
 mod scheduler;
 mod sdr;
+mod sink;
+use crate::config::Issues;
 use crate::resolve::resolve;
 use crate::{config::Config, resolve::ResolvedConfig, scheduler::Scheduler, sdr::detect};
 use anyhow::Result;
@@ -15,11 +17,14 @@ fn main() -> Result<()> {
         .unwrap_or_else(|| "sdrchive_config.json".to_string());
     let config_path: &Path = Path::new(&config_str);
     let cfg: Config = config::Config::load(config_path)?;
-    create_dir_all(&cfg.output_dir)?;
     let mut sdr = detect()?;
     let caps = sdr.capabilities();
-    let resolved_cfg: ResolvedConfig = resolve(&cfg, caps)?;
+    let mut issues = Issues::default();
+    cfg.validate(&mut issues);
+    let resolved_cfg: ResolvedConfig = resolve(&cfg, caps, &mut issues);
+    issues.into_result()?;
+    create_dir_all(&cfg.output_dir)?;
     let mut scheduler = Scheduler::new(resolved_cfg)?;
-    // scheduler.run(&sdr)?;
+    scheduler.run(&mut *sdr)?;
     Ok(())
 }

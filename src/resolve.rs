@@ -27,9 +27,8 @@ pub struct ResolvedJob {
     pub hw_config: HardwareConfig,
 }
 
-pub fn resolve(cfg: &Config, caps: &Capabilities) -> Result<ResolvedConfig, Issues> {
+pub fn resolve(cfg: &Config, caps: &Capabilities, issues: &mut Issues) -> ResolvedConfig {
     let mut resolved_jobs: Vec<ResolvedJob> = Vec::new();
-    let mut issues: Issues = Issues::default();
     let supported_rates = caps
         .sample_rates_hz
         .iter()
@@ -37,7 +36,6 @@ pub fn resolve(cfg: &Config, caps: &Capabilities) -> Result<ResolvedConfig, Issu
         .collect::<Vec<_>>()
         .join(", ");
     for (i, j) in cfg.jobs.iter().enumerate() {
-        let beforelen = issues.items.len();
         issues.check(
             caps.supports_freq(j.frequency_hz),
             format!("jobs[{i}].frequency_hz"),
@@ -59,31 +57,33 @@ pub fn resolve(cfg: &Config, caps: &Capabilities) -> Result<ResolvedConfig, Issu
         );
         let gain = match j.gain {
             GainSetting::Auto => Auto,
-            GainSetting::Db(db) => Gain::Db(get_nearest_gain(&db, &caps.gain_steps_db)),
+            GainSetting::Db(db) => {
+                let nearest = get_nearest_gain(&db, &caps.gain_steps_db);
+                if nearest != db {
+                    eprintln!(
+                        "jobs[{i}].gain converted to nearest gain compatible with device: {nearest} dB"
+                    );
+                }
+                Gain::Db(nearest)
+            }
         };
-        let afterlen = issues.items.len();
-        if afterlen == beforelen {
-            resolved_jobs.push(ResolvedJob {
-                name: j.name.clone(),
-                schedule: j.schedule.clone(),
-                demod_type: j.demod_type.clone(),
-                retention_days: j.retention_days,
-                hw_config: HardwareConfig {
-                    center_freq_hz: j.frequency_hz,
-                    sample_rate_hz: j.sample_rate_hz,
-                    gain,
-                },
-            })
-        }
-    }
-    if issues.items.is_empty() {
-        Ok(ResolvedConfig {
-            output_dir: cfg.output_dir.clone(),
-            location: cfg.location,
-            resolved_jobs,
+
+        resolved_jobs.push(ResolvedJob {
+            name: j.name.clone(),
+            schedule: j.schedule.clone(),
+            demod_type: j.demod_type.clone(),
+            retention_days: j.retention_days,
+            hw_config: HardwareConfig {
+                center_freq_hz: j.frequency_hz,
+                sample_rate_hz: j.sample_rate_hz,
+                gain,
+            },
         })
-    } else {
-        Err(issues)
+    }
+    ResolvedConfig {
+        output_dir: cfg.output_dir.clone(),
+        location: cfg.location,
+        resolved_jobs,
     }
 }
 

@@ -1,3 +1,4 @@
+use crate::sink::IqSink;
 use crate::{
     config::{Location, Schedule},
     resolve::{ResolvedConfig, ResolvedJob},
@@ -53,7 +54,8 @@ impl Scheduler {
             };
             next_job.next_run = next_occurrence(&next_job.job.schedule, &now)?;
             let dur_seconds = next_job.job.schedule.duration_minutes() * 60;
-            runner::run_job(&next_job.job, dur_seconds, sdr, &self.output_dir)?;
+            let sink = IqSink::new(&next_job.job.name, &self.output_dir)?;
+            runner::run_job(&next_job.job, dur_seconds, sdr, Box::new(sink))?;
             self.heap.push(next_job);
         }
         Ok(())

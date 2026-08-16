@@ -4,6 +4,7 @@
     {
       "name": "noaa_wx",
       "frequency_hz": 162550000,
+      "sample_rate": 240000,
       "schedule": {
         "type": "every",
         "interval_minutes": 2,

@@ -31,14 +31,11 @@ impl Config {
         Self::from_json(&text).with_context(|| format!("invalid config file {path:?}"))
     }
 
-    pub fn from_json(text: &str) -> anyhow::Result<Self> {
-        let config: Config = serde_json::from_str(text)?;
-        config.validate()?;
-        Ok(config)
+    pub fn from_json(cfg_json: &str) -> anyhow::Result<Self> {
+        Ok(serde_json::from_str(cfg_json)?)
     }
 
-    fn validate(&self) -> Result<(), Issues> {
-        let mut issues = Issues::default();
+    pub fn validate(&self, issues: &mut Issues) {
         issues.check(
             !self.jobs.is_empty(),
             "jobs",
@@ -126,7 +123,6 @@ impl Config {
                 }
             }
         }
-        issues.into_result()
     }
 }
 
@@ -338,7 +334,10 @@ mod tests {
           "demod_type": "nfm" }
     ]
     }"#;
-        let err = Config::from_json(config_str).unwrap_err();
+        let config = Config::from_json(config_str).unwrap();
+        let mut issues = Issues::default();
+        config.validate(&mut issues);
+        let err = issues.into_result().unwrap_err();
         assert!(err.to_string().contains("unique"));
     }
 
@@ -357,7 +356,10 @@ mod tests {
         ]
         }
         "#;
-        let err = Config::from_json(config_str).unwrap_err();
+        let config = Config::from_json(config_str).unwrap();
+        let mut issues = Issues::default();
+        config.validate(&mut issues);
+        let err = issues.into_result().unwrap_err();
         assert!(err.to_string().contains("retention_days"));
     }
 
@@ -375,7 +377,10 @@ mod tests {
         ]
         }
         "#;
-        let err = Config::from_json(config_str).unwrap_err();
+        let config = Config::from_json(config_str).unwrap();
+        let mut issues = Issues::default();
+        config.validate(&mut issues);
+        let err = issues.into_result().unwrap_err();
         assert!(err.to_string().contains("greater than 0"));
     }
 
@@ -393,7 +398,10 @@ mod tests {
         ]
         }
         "#;
-        let err = Config::from_json(config_str).unwrap_err();
+        let config = Config::from_json(config_str).unwrap();
+        let mut issues = Issues::default();
+        config.validate(&mut issues);
+        let err = issues.into_result().unwrap_err();
         assert!(err.to_string().contains("less than 1440"));
     }
 
@@ -411,7 +419,10 @@ mod tests {
         ]
         }
         "#;
-        let err = Config::from_json(config_str).unwrap_err();
+        let config = Config::from_json(config_str).unwrap();
+        let mut issues = Issues::default();
+        config.validate(&mut issues);
+        let err = issues.into_result().unwrap_err();
         assert!(err.to_string().contains("interval_minutes"));
     }
 
@@ -429,7 +440,10 @@ mod tests {
         ]
         }
         "#;
-        let err = Config::from_json(config_str).unwrap_err();
+        let config = Config::from_json(config_str).unwrap();
+        let mut issues = Issues::default();
+        config.validate(&mut issues);
+        let err = issues.into_result().unwrap_err();
         assert!(err.to_string().contains("greater than 0"));
     }
 
@@ -447,7 +461,10 @@ mod tests {
         ]
         }
         "#;
-        let err = Config::from_json(config_str).unwrap_err();
+        let config = Config::from_json(config_str).unwrap();
+        let mut issues = Issues::default();
+        config.validate(&mut issues);
+        let err = issues.into_result().unwrap_err();
         assert!(err.to_string().contains("less than 'interval_minutes'"));
     }
 
