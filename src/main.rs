@@ -1,4 +1,5 @@
 mod config;
+mod dsp;
 mod resolve;
 mod runner;
 mod scheduler;
