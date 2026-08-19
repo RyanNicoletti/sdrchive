@@ -4,7 +4,6 @@ mod resolve;
 mod runner;
 mod scheduler;
 mod sdr;
-mod sink;
 use crate::config::Issues;
 use crate::resolve::resolve;
 use crate::{config::Config, resolve::ResolvedConfig, scheduler::Scheduler, sdr::detect};
