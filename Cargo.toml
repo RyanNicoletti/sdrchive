@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.104"
 clap = { version = "4.6.4", features = ["derive"] }
+futuredsp = "0.8.0"
 jiff = "0.2.35"
 num-complex = "0.4.6"
 rtl-sdr-rs = "0.3.3"
