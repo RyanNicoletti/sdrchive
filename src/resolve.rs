@@ -1,13 +1,13 @@
-use std::path::PathBuf;
-
 use crate::{
     config::{Config, DemodType, GainSetting, Issues, Location, Schedule},
+    dsp::demod_params::params_for,
     sdr::{
         Capabilities,
         Gain::{self, Auto},
         HardwareConfig,
     },
 };
+use std::path::PathBuf;
 
 #[derive(Debug)]
 
@@ -53,6 +53,16 @@ pub fn resolve(cfg: &Config, caps: &Capabilities, issues: &mut Issues) -> Resolv
             format!(
                 "{} is not supported; device supports {supported_rates}",
                 j.sample_rate_hz
+            ),
+        );
+        let demod_params = params_for(j.demod_type);
+        issues.check(
+            j.sample_rate_hz >= demod_params.channel_fs_hz
+                && j.sample_rate_hz % demod_params.channel_fs_hz == 0,
+            format!("jobs[{i}].sample_rate_hz"),
+            format!(
+                "{} Hz must be a whole multiple of the {:?} channel rate ({} Hz)",
+                j.sample_rate_hz, j.demod_type, demod_params.channel_fs_hz
             ),
         );
         let gain = match j.gain {
