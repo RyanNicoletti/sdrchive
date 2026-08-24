@@ -25,6 +25,7 @@ pub struct ResolvedJob {
     pub demod_type: DemodType,
     pub retention_days: u32,
     pub hw_config: HardwareConfig,
+    pub max_runs: Option<u32>,
 }
 
 pub fn resolve(cfg: &Config, caps: &Capabilities, issues: &mut Issues) -> ResolvedConfig {
@@ -88,6 +89,7 @@ pub fn resolve(cfg: &Config, caps: &Capabilities, issues: &mut Issues) -> Resolv
                 sample_rate_hz: j.sample_rate_hz,
                 gain,
             },
+            max_runs: j.max_runs,
         })
     }
     ResolvedConfig {

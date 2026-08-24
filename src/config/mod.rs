@@ -77,6 +77,11 @@ impl Config {
                 format!("jobs[{i}].sample_rate"),
                 "must be greater than 0",
             );
+            issues.check(
+                job.max_runs > Some(0),
+                format!("jobs[{i}].max_runs"),
+                "must be greater than 0",
+            );
 
             if let GainSetting::Db(db) = job.gain {
                 issues.check(
@@ -145,6 +150,7 @@ pub struct Job {
     #[serde(default)]
     pub gain: GainSetting,
     pub sample_rate_hz: u32,
+    pub max_runs: Option<u32>,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy)]

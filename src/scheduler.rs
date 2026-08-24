@@ -10,7 +10,8 @@ use std::{cmp::Ordering, collections::BinaryHeap, path::PathBuf, time::Duration}
 #[derive(Debug)]
 pub struct ScheduledJob {
     pub job: ResolvedJob,
-    pub next_run: Zoned,
+    pub next_run_date: Zoned,
+    pub runs_completed: u32,
 }
 
 pub struct Scheduler {
@@ -27,7 +28,8 @@ impl Scheduler {
             let next = next_occurrence(&job.schedule, &now)?;
             job_heap.push(ScheduledJob {
                 job,
-                next_run: next,
+                next_run_date: next,
+                runs_completed: 0,
             });
         }
         Ok(Self {
@@ -39,22 +41,29 @@ impl Scheduler {
     pub fn run(&mut self, sdr: &mut dyn SdrDevice) -> anyhow::Result<()> {
         loop {
             let now = Zoned::now();
-            let Some(due_at) = self.heap.peek().map(|e| e.next_run.clone()) else {
+            let Some(due_at) = self.heap.peek().map(|e| e.next_run_date.clone()) else {
                 break;
             };
             if due_at > now {
-                let dur = Duration::try_from(due_at - now)?;
-                std::thread::sleep(std::cmp::min(dur, Duration::from_secs(60)));
+                let seconds_due = Duration::try_from(due_at - now)?;
+                std::thread::sleep(std::cmp::min(seconds_due, Duration::from_secs(60)));
                 continue;
             }
 
             let Some(mut next_job) = self.heap.pop() else {
                 break;
             };
-            next_job.next_run = next_occurrence(&next_job.job.schedule, &now)?;
+            next_job.next_run_date = next_occurrence(&next_job.job.schedule, &now)?;
             let dur_seconds = next_job.job.schedule.duration_minutes() * 60;
             runner::run_job(&next_job.job, dur_seconds, sdr, &self.output_dir)?;
-            self.heap.push(next_job);
+            next_job.runs_completed += 1;
+            if next_job
+                .job
+                .max_runs
+                .is_none_or(|max| max > next_job.runs_completed)
+            {
+                self.heap.push(next_job);
+            }
         }
         Ok(())
     }
@@ -62,7 +71,7 @@ impl Scheduler {
 
 impl PartialEq for ScheduledJob {
     fn eq(&self, other: &Self) -> bool {
-        self.next_run == other.next_run
+        self.next_run_date == other.next_run_date
     }
 }
 impl Eq for ScheduledJob {}
@@ -75,7 +84,7 @@ impl PartialOrd for ScheduledJob {
 
 impl Ord for ScheduledJob {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.next_run.cmp(&other.next_run).reverse()
+        self.next_run_date.cmp(&other.next_run_date).reverse()
     }
 }
 
