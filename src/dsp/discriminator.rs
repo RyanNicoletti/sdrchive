@@ -15,7 +15,7 @@ impl FmDiscriminator {
         self.out.clear();
         self.out.reserve(input.len());
         for x in input.iter() {
-            let angle = (p * x.conj()).arg();
+            let angle = (x * p.conj()).arg();
             self.out.push(angle);
             p = *x;
         }

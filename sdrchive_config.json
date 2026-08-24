@@ -3,6 +3,7 @@
   "jobs": [
     {
       "name": "fm_test",
+      "gain": 30.0,
       "frequency_hz": 99500000,
       "sample_rate_hz": 2400000,
       "schedule": {

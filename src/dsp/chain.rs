@@ -25,7 +25,7 @@ impl DemodChainType {
             DemodChainType::Fm(fm) => fm.process(iq),
         }
     }
-    pub fn get_audio_fs(&mut self) -> u32 {
+    pub fn get_audio_fs(&self) -> u32 {
         match self {
             DemodChainType::Fm(fm) => fm.audio_sample_rate_hz(),
         }
@@ -64,7 +64,7 @@ impl FmDemodChain {
         let filt_audio = self.audio_fir.run_filter(audio);
         filt_audio
     }
-    pub fn audio_sample_rate_hz(&mut self) -> u32 {
+    pub fn audio_sample_rate_hz(&self) -> u32 {
         self.audio_fs
     }
 }

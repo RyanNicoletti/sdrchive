@@ -68,7 +68,7 @@ pub fn resolve(cfg: &Config, caps: &Capabilities, issues: &mut Issues) -> Resolv
         let gain = match j.gain {
             GainSetting::Auto => Auto,
             GainSetting::Db(db) => {
-                let nearest = get_nearest_gain(&db, &caps.gain_steps_db);
+                let nearest = get_nearest_gain(db, &caps.gain_steps_db);
                 if nearest != db {
                     eprintln!(
                         "jobs[{i}].gain converted to nearest gain compatible with device: {nearest} dB"
@@ -81,7 +81,7 @@ pub fn resolve(cfg: &Config, caps: &Capabilities, issues: &mut Issues) -> Resolv
         resolved_jobs.push(ResolvedJob {
             name: j.name.clone(),
             schedule: j.schedule.clone(),
-            demod_type: j.demod_type.clone(),
+            demod_type: j.demod_type,
             retention_days: j.retention_days,
             hw_config: HardwareConfig {
                 center_freq_hz: j.frequency_hz,
@@ -97,7 +97,7 @@ pub fn resolve(cfg: &Config, caps: &Capabilities, issues: &mut Issues) -> Resolv
     }
 }
 
-fn get_nearest_gain(db: &f32, gains: &[f32]) -> f32 {
+fn get_nearest_gain(db: f32, gains: &[f32]) -> f32 {
     let mut closest = gains[0];
     for gain in &gains[1..] {
         if (db - *gain).abs() < (db - closest).abs() {

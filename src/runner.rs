@@ -1,4 +1,6 @@
-use std::process::exit;
+use std::path::PathBuf;
+
+use jiff::Zoned;
 
 use crate::{dsp::chain::DemodChainType, resolve::ResolvedJob, sdr::SdrDevice};
 
@@ -6,6 +8,7 @@ pub fn run_job(
     job: &ResolvedJob,
     job_duration: u32,
     sdr: &mut dyn SdrDevice,
+    out_dir: &PathBuf,
 ) -> anyhow::Result<()> {
     sdr.configure(&job.hw_config)?;
     let mut filter_chain = DemodChainType::new(job.demod_type, job.hw_config.sample_rate_hz);
@@ -15,7 +18,8 @@ pub fn run_job(
         bits_per_sample: 16,
         sample_format: hound::SampleFormat::Int,
     };
-    let mut wav_writer = hound::WavWriter::create("test.wav", spec)?;
+    let out_path = make_out_path(out_dir, job.name.as_str());
+    let mut wav_writer = hound::WavWriter::create(&out_path, spec)?;
     let samples_needed: u64 = job_duration as u64 * job.hw_config.sample_rate_hz as u64;
     let mut count: u64 = 0;
     while count < samples_needed {
@@ -28,7 +32,10 @@ pub fn run_job(
         count += samples.len() as u64;
     }
     wav_writer.finalize()?;
-    println!("DONT WRITING FILE");
-    exit(0);
     Ok(())
+}
+
+fn make_out_path(out_dir: &PathBuf, file_name: &str) -> PathBuf {
+    let date = Zoned::now().strftime("%Y%m%dT%H%M%S").to_string();
+    out_dir.join(format!("{file_name}_{date}"))
 }

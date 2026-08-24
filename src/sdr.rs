@@ -23,16 +23,11 @@ impl Capabilities {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum Gain {
+    #[default]
     Auto,
     Db(f32),
-}
-
-impl Default for Gain {
-    fn default() -> Self {
-        Gain::Auto
-    }
 }
 
 #[derive(Debug)]
@@ -54,7 +49,7 @@ pub struct RtlSdrDev {
     device: RtlSdr,
     capabilities: Capabilities,
     raw: Vec<u8>,
-    pub iq: Vec<Complex<f32>>,
+    iq: Vec<Complex<f32>>,
 }
 
 impl RtlSdrDev {
