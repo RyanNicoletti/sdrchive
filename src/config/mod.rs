@@ -19,7 +19,6 @@ fn default_retention() -> u32 {
 pub struct Config {
     #[serde(default = "default_output_dir")]
     pub output_dir: PathBuf,
-    #[serde(default)]
     pub location: Option<Location>,
     pub jobs: Vec<Job>,
 }
@@ -74,13 +73,13 @@ impl Config {
             );
             issues.check(
                 job.sample_rate_hz > 0,
-                format!("jobs[{i}].sample_rate"),
+                format!("jobs[{i}].sample_rate_hz"),
                 "must be greater than 0",
             );
             issues.check(
-                job.max_runs > Some(0),
+                job.max_runs.is_none_or(|m| m > 0),
                 format!("jobs[{i}].max_runs"),
-                "must be greater than 0",
+                "must be greater than 0 omitted from config to run indefinitely",
             );
 
             if let GainSetting::Db(db) = job.gain {

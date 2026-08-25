@@ -39,6 +39,7 @@ impl Scheduler {
         })
     }
     pub fn run(&mut self, sdr: &mut dyn SdrDevice) -> anyhow::Result<()> {
+        let mut consecutive_fails = 0u32;
         loop {
             let now = Zoned::now();
             let Some(due_at) = self.heap.peek().map(|e| e.next_run_date.clone()) else {
@@ -55,12 +56,26 @@ impl Scheduler {
             };
             next_job.next_run_date = next_occurrence(&next_job.job.schedule, &now)?;
             let dur_seconds = next_job.job.schedule.duration_minutes() * 60;
-            runner::run_job(&next_job.job, dur_seconds, sdr, &self.output_dir)?;
-            next_job.runs_completed += 1;
+            match runner::run_job(&next_job.job, dur_seconds, sdr, &self.output_dir) {
+                Ok(_) => {
+                    consecutive_fails = 0;
+                    next_job.runs_completed += 1;
+                }
+                Err(e) => {
+                    consecutive_fails += 1;
+                    eprintln!(
+                        "job {:?} failed ({consecutive_fails}/5): {e:#}",
+                        next_job.job.name
+                    );
+                    if consecutive_fails >= 5 {
+                        return Err(e);
+                    }
+                }
+            }
             if next_job
                 .job
                 .max_runs
-                .is_none_or(|max| max > next_job.runs_completed)
+                .is_none_or(|max| max >= next_job.runs_completed)
             {
                 self.heap.push(next_job);
             }
