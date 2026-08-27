@@ -2,17 +2,17 @@
   "output_dir": "./recordings",
   "jobs": [
     {
-      "name": "fm_test",
-      "gain": 30.0,
-      "frequency_hz": 99500000,
+      "name": "iad_tower",
+      "frequency_hz": 120100000,
       "sample_rate_hz": 2400000,
+      "gain": 42.0,
       "schedule": {
         "type": "every",
-        "interval_minutes": 2,
-        "duration_minutes": 1
+        "interval_minutes": 9,
+        "duration_minutes": 8
       },
-      "demod_type": "wfm",
-      "retention_days": 30
+      "demod_type": "am",
+      "max_runs": 1
     }
   ]
 }

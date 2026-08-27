@@ -1,3 +1,4 @@
+pub(crate) mod agc;
 pub(crate) mod chain;
 pub(crate) mod dc_blocker;
 pub(crate) mod demod_params;

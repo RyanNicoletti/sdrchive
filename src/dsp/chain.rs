@@ -4,7 +4,7 @@ use num_complex::Complex;
 use crate::{
     config::DemodType,
     dsp::{
-        dc_blocker::DcBlocker, demod_params::params_for, discriminator::FmDiscriminator,
+        agc::Agc, dc_blocker::DcBlocker, demod_params::params_for, discriminator::FmDiscriminator,
         envelope::AmEnvelope, fir::StreamingFir,
     },
 };
@@ -80,6 +80,7 @@ pub struct AmDemodChain {
     audio_fir: StreamingFir<f32, f32, Vec<f32>>,
     dc_blocker: DcBlocker,
     audio_fs: u32,
+    agc: Agc,
 }
 
 impl AmDemodChain {
@@ -105,6 +106,7 @@ impl AmDemodChain {
             ),
             audio_fir: StreamingFir::new(dec2 as usize, taps2),
             audio_fs: demod_params.audio_fs_hz,
+            agc: Agc::new(0.3, 1e-2, 1e-4, 100.0),
         }
     }
     fn process(&mut self, iq: &[Complex<f32>]) -> &[f32] {
@@ -112,7 +114,7 @@ impl AmDemodChain {
         let audio = self.envelope.run(filtered);
         let filt_audio = self.audio_fir.run_filter(audio);
         let cleaned_audio = self.dc_blocker.run(filt_audio);
-        cleaned_audio
+        self.agc.run(cleaned_audio)
     }
     fn audio_sample_rate_hz(&self) -> u32 {
         self.audio_fs
