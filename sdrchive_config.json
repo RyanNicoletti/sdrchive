@@ -2,7 +2,7 @@
   "output_dir": "./recordings",
   "jobs": [
     {
-      "name": "iad_tower",
+      "name": "iad_tower_morning",
       "frequency_hz": 120100000,
       "sample_rate_hz": 2400000,
       "gain": 42.0,
@@ -12,6 +12,21 @@
         "duration_minutes": 8
       },
       "demod_type": "am",
+      "squelch_threshold_dbfs": -38.0,
+      "max_runs": 1
+    },
+    {
+      "name": "iad_ground",
+      "frequency_hz": 121900000,
+      "sample_rate_hz": 2400000,
+      "gain": 42.0,
+      "schedule": {
+        "type": "every",
+        "interval_minutes": 3,
+        "duration_minutes": 2
+      },
+      "demod_type": "am",
+      "squelch_threshold_dbfs": -38.0,
       "max_runs": 1
     }
   ]

@@ -81,6 +81,18 @@ impl Config {
                 format!("jobs[{i}].max_runs"),
                 "must be greater than 0 omitted from config to run indefinitely",
             );
+            if let Some(s) = job.squelch_threshold_dbfs {
+                issues.check(
+                    s.is_finite(),
+                    format!("jobs[{i}].squelch_threshold_dbfs"),
+                    "must be a finite number",
+                );
+                issues.check(
+                    s < 0.0,
+                    format!("jobs[{i}].squelch_threshold_dbfs"),
+                    "must be less than 0",
+                );
+            }
 
             if let GainSetting::Db(db) = job.gain {
                 issues.check(
@@ -148,6 +160,8 @@ pub struct Job {
     pub retention_days: u32,
     #[serde(default)]
     pub gain: GainSetting,
+    #[serde(default)]
+    pub squelch_threshold_dbfs: Option<f32>,
     pub sample_rate_hz: u32,
     pub max_runs: Option<u32>,
 }

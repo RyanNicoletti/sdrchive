@@ -75,7 +75,7 @@ impl Scheduler {
             if next_job
                 .job
                 .max_runs
-                .is_none_or(|max| max < next_job.runs_completed)
+                .is_none_or(|max| max > next_job.runs_completed)
             {
                 self.heap.push(next_job);
             }

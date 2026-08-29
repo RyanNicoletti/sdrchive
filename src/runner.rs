@@ -11,7 +11,11 @@ pub fn run_job(
     out_dir: &PathBuf,
 ) -> anyhow::Result<()> {
     sdr.configure(&job.hw_config)?;
-    let mut filter_chain = DemodChainType::new(job.demod_type, job.hw_config.sample_rate_hz);
+    let mut filter_chain = DemodChainType::new(
+        job.demod_type,
+        job.hw_config.sample_rate_hz,
+        job.squelch_threshold_dbfs,
+    );
     let spec = hound::WavSpec {
         channels: 1,
         sample_rate: filter_chain.get_audio_fs(),
