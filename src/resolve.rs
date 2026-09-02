@@ -24,7 +24,6 @@ pub struct ResolvedJob {
     pub schedule: Schedule,
     pub demod_type: DemodType,
     pub squelch_threshold_dbfs: Option<f32>,
-    pub retention_days: u32,
     pub hw_config: HardwareConfig,
     pub max_runs: Option<u32>,
 }
@@ -85,7 +84,6 @@ pub fn resolve(cfg: &Config, caps: &Capabilities, issues: &mut Issues) -> Resolv
             schedule: j.schedule.clone(),
             demod_type: j.demod_type,
             squelch_threshold_dbfs: j.squelch_threshold_dbfs,
-            retention_days: j.retention_days,
             hw_config: HardwareConfig {
                 center_freq_hz: j.frequency_hz,
                 sample_rate_hz: j.sample_rate_hz,

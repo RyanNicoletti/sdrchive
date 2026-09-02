@@ -10,9 +10,6 @@ use std::path::{Path, PathBuf};
 fn default_output_dir() -> PathBuf {
     PathBuf::from("./recordings")
 }
-fn default_retention() -> u32 {
-    30
-}
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -67,11 +64,6 @@ impl Config {
                 "job names must be unique",
             );
             issues.check(
-                job.retention_days > 0,
-                format!("jobs[{i}].retention_days"),
-                "must be greater than 0",
-            );
-            issues.check(
                 job.sample_rate_hz > 0,
                 format!("jobs[{i}].sample_rate_hz"),
                 "must be greater than 0",
@@ -79,7 +71,7 @@ impl Config {
             issues.check(
                 job.max_runs.is_none_or(|m| m > 0),
                 format!("jobs[{i}].max_runs"),
-                "must be greater than 0 omitted from config to run indefinitely",
+                "must be greater than 0 or omitted from config to run indefinitely",
             );
             if let Some(s) = job.squelch_threshold_dbfs {
                 issues.check(
@@ -156,8 +148,6 @@ pub struct Job {
     pub frequency_hz: u64,
     pub schedule: Schedule,
     pub demod_type: DemodType,
-    #[serde(default = "default_retention")]
-    pub retention_days: u32,
     #[serde(default)]
     pub gain: GainSetting,
     #[serde(default)]
@@ -274,15 +264,13 @@ mod tests {
             "frequency_hz": 162550000,
             "sample_rate_hz": 2400000,
             "schedule": { "type": "daily", "start": "06:00", "duration_minutes": 60 },
-            "demod_type": "nfm",
-            "retention_days": 30
+            "demod_type": "nfm"
             }
         ]
         }
         "#;
         let config = Config::from_json(config_str).unwrap();
         assert_eq!(config.jobs[0].frequency_hz, 162550000);
-        assert_eq!(config.jobs[0].retention_days, 30);
     }
 
     #[test]
@@ -300,7 +288,6 @@ mod tests {
         }
         "#;
         let config = Config::from_json(config_str).unwrap();
-        assert_eq!(config.jobs[0].retention_days, 30);
         assert_eq!(config.output_dir, Path::new("./recordings"));
         assert_eq!(config.jobs[0].gain, GainSetting::Auto);
     }
@@ -332,8 +319,7 @@ mod tests {
             "frequency_hz": 162550000,
             "sample_rate_hz": 2400000,
             "schedule": { "type": "daily", "start": "26:00", "duration_minutes": 60 },
-            "demod_type": "nfm",
-            "retention_days": 30
+            "demod_type": "nfm"
             }
         ]
         }
@@ -358,28 +344,6 @@ mod tests {
         config.validate(&mut issues);
         let err = issues.into_result().unwrap_err();
         assert!(err.to_string().contains("unique"));
-    }
-
-    #[test]
-    fn test_zero_retention() {
-        let config_str = r#"{
-        "jobs": [
-            {
-            "name": "noaa_wx",
-            "frequency_hz": 162550000,
-            "sample_rate_hz": 2400000,
-            "schedule": { "type": "daily", "start": "06:00", "duration_minutes": 60 },
-            "demod_type": "nfm",
-            "retention_days": 0
-            }
-        ]
-        }
-        "#;
-        let config = Config::from_json(config_str).unwrap();
-        let mut issues = Issues::default();
-        config.validate(&mut issues);
-        let err = issues.into_result().unwrap_err();
-        assert!(err.to_string().contains("retention_days"));
     }
 
     #[test]

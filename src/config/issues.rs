@@ -53,7 +53,6 @@ mod tests {
     fn test_issues_collects_all_failures() {
         let mut issues = Issues::default();
         issues.check(false, "jobs[0].name", "must not be empty");
-        issues.check(true, "jobs[0].retention_days", "must be greater than 0");
         issues.check(
             false,
             "jobs[1].schedule.duration_minutes",
@@ -63,6 +62,5 @@ mod tests {
         let msg = issues.into_result().unwrap_err().to_string();
         assert!(msg.contains("jobs[0].name"));
         assert!(msg.contains("jobs[1].schedule.duration_minutes"));
-        assert!(!msg.contains("retention_days"));
     }
 }
